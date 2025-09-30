@@ -1,7 +1,8 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { supabase } from '@/lib/supabase'
+import { createClient } from '@/utils/supabase/client'
+import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import {
@@ -36,9 +37,32 @@ export default function TopicsPage() {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
   const [newTopic, setNewTopic] = useState({ title: '', description: '', keywords: '' })
   const [isDeleting, setIsDeleting] = useState<string | null>(null)
+  const [isAnonymous, setIsAnonymous] = useState(false)
+  const router = useRouter()
+  const supabase = createClient()
 
   useEffect(() => {
+    checkAuth()
+  }, [])
+
+  const checkAuth = async () => {
+    const {
+      data: { session },
+    } = await supabase.auth.getSession()
+    setIsAnonymous(!session)
     fetchTopics()
+  }
+
+  useEffect(() => {
+    // Listen for auth state changes
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setIsAnonymous(!session)
+      fetchTopics()
+    })
+
+    return () => subscription.unsubscribe()
   }, [])
 
   const fetchTopics = async () => {
@@ -130,70 +154,80 @@ export default function TopicsPage() {
       <div className="flex justify-between items-center mb-6">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Topics</h1>
-          <p className="text-muted-foreground">Manage the subjects you want to follow</p>
+          <p className="text-muted-foreground">
+            {isAnonymous
+              ? 'Sign in to create and manage your topics'
+              : 'Manage the subjects you want to follow'}
+          </p>
         </div>
 
-        <Dialog open={isCreateModalOpen} onOpenChange={setIsCreateModalOpen}>
-          <DialogTrigger asChild>
-            <Button>
-              <Plus className="h-4 w-4 mr-2" />
-              Create Topic
-            </Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Create New Topic</DialogTitle>
-              <DialogDescription>
-                Add a new topic to track. You can specify keywords to help refine the search.
-              </DialogDescription>
-            </DialogHeader>
-            <div className="grid gap-4 py-4">
-              <div className="grid gap-2">
-                <label htmlFor="title" className="text-sm font-medium">
-                  Title
-                </label>
-                <Input
-                  id="title"
-                  value={newTopic.title}
-                  onChange={(e) => setNewTopic({ ...newTopic, title: e.target.value })}
-                  placeholder="e.g., React Best Practices"
-                />
-              </div>
-              <div className="grid gap-2">
-                <label htmlFor="description" className="text-sm font-medium">
-                  Description
-                </label>
-                <Textarea
-                  id="description"
-                  value={newTopic.description}
-                  onChange={(e) => setNewTopic({ ...newTopic, description: e.target.value })}
-                  placeholder="Describe what you're looking for..."
-                  className="min-h-[80px]"
-                />
-              </div>
-              <div className="grid gap-2">
-                <label htmlFor="keywords" className="text-sm font-medium">
-                  Keywords <span className="text-muted-foreground">(optional)</span>
-                </label>
-                <Input
-                  id="keywords"
-                  value={newTopic.keywords}
-                  onChange={(e) => setNewTopic({ ...newTopic, keywords: e.target.value })}
-                  placeholder="javascript, hooks, performance"
-                />
-                <p className="text-xs text-muted-foreground">Separate keywords with commas</p>
-              </div>
-            </div>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setIsCreateModalOpen(false)}>
-                Cancel
-              </Button>
-              <Button onClick={createTopic} disabled={!newTopic.title.trim()}>
-                Create Topic
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+        <div className="flex gap-2">
+          {isAnonymous ? (
+            <Button onClick={() => router.push('/login')}>Sign In to Create Topics</Button>
+          ) : (
+            <Dialog open={isCreateModalOpen} onOpenChange={setIsCreateModalOpen}>
+              <DialogTrigger asChild>
+                <Button>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Create Topic
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Create New Topic</DialogTitle>
+                  <DialogDescription>
+                    Add a new topic to track. You can specify keywords to help refine the search.
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="grid gap-4 py-4">
+                  <div className="grid gap-2">
+                    <label htmlFor="title" className="text-sm font-medium">
+                      Title
+                    </label>
+                    <Input
+                      id="title"
+                      value={newTopic.title}
+                      onChange={(e) => setNewTopic({ ...newTopic, title: e.target.value })}
+                      placeholder="e.g., React Best Practices"
+                    />
+                  </div>
+                  <div className="grid gap-2">
+                    <label htmlFor="description" className="text-sm font-medium">
+                      Description
+                    </label>
+                    <Textarea
+                      id="description"
+                      value={newTopic.description}
+                      onChange={(e) => setNewTopic({ ...newTopic, description: e.target.value })}
+                      placeholder="Describe what you're looking for..."
+                      className="min-h-[80px]"
+                    />
+                  </div>
+                  <div className="grid gap-2">
+                    <label htmlFor="keywords" className="text-sm font-medium">
+                      Keywords <span className="text-muted-foreground">(optional)</span>
+                    </label>
+                    <Input
+                      id="keywords"
+                      value={newTopic.keywords}
+                      onChange={(e) => setNewTopic({ ...newTopic, keywords: e.target.value })}
+                      placeholder="javascript, hooks, performance"
+                    />
+                    <p className="text-xs text-muted-foreground">Separate keywords with commas</p>
+                  </div>
+                </div>
+                <DialogFooter>
+                  <Button variant="outline" onClick={() => setIsCreateModalOpen(false)}>
+                    Cancel
+                  </Button>
+                  <Button onClick={createTopic} disabled={!newTopic.title.trim()}>
+                    Create Topic
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+          )}
+        </div>
       </div>
 
       {topics.length === 0 ? (
@@ -201,19 +235,23 @@ export default function TopicsPage() {
           <CardHeader>
             <CardTitle className="text-muted-foreground">No topics yet</CardTitle>
             <CardDescription>
-              Create your first topic to start tracking subjects that interest you.
+              {isAnonymous
+                ? 'Sign in to create and manage your topics'
+                : 'Create your first topic to start tracking subjects that interest you.'}
             </CardDescription>
           </CardHeader>
-          <CardContent>
-            <Dialog open={isCreateModalOpen} onOpenChange={setIsCreateModalOpen}>
-              <DialogTrigger asChild>
-                <Button>
-                  <Plus className="h-4 w-4 mr-2" />
-                  Create your first topic
-                </Button>
-              </DialogTrigger>
-            </Dialog>
-          </CardContent>
+          {!isAnonymous && (
+            <CardContent>
+              <Dialog open={isCreateModalOpen} onOpenChange={setIsCreateModalOpen}>
+                <DialogTrigger asChild>
+                  <Button>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Create your first topic
+                  </Button>
+                </DialogTrigger>
+              </Dialog>
+            </CardContent>
+          )}
         </Card>
       ) : (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">

@@ -1,34 +1,17 @@
+import { type NextRequest } from 'next/server'
+import { updateSession } from '@/utils/supabase/middleware'
 import { NextResponse } from 'next/server'
-import type { NextRequest } from 'next/server'
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
 
-  // Public routes that don't require authentication
-  const publicRoutes = ['/login', '/auth/callback']
-
-  if (publicRoutes.includes(pathname)) {
-    return NextResponse.next()
-  }
-
-  // Check for auth token in cookies
-  const token = request.cookies.get('sb-access-token')
-
-  // If no token and trying to access protected route, redirect to login
-  if (!token && pathname !== '/') {
-    return NextResponse.redirect(new URL('/login', request.url))
-  }
-
-  // Root route logic
+  // Root route logic - redirect to topics
   if (pathname === '/') {
-    if (token) {
-      return NextResponse.redirect(new URL('/feed', request.url))
-    } else {
-      return NextResponse.redirect(new URL('/login', request.url))
-    }
+    return NextResponse.redirect(new URL('/topics', request.url))
   }
 
-  return NextResponse.next()
+  // Update user's auth session
+  return await updateSession(request)
 }
 
 export const config = {

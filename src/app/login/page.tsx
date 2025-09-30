@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { supabase } from '@/lib/supabase'
+import { createClient } from '@/utils/supabase/client'
 import { useRouter } from 'next/navigation'
 import { Google, Github } from '@lobehub/icons'
 
@@ -10,6 +10,7 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState('')
   const router = useRouter()
+  const supabase = createClient()
 
   const signInWithGoogle = async () => {
     setLoading(true)
@@ -17,7 +18,7 @@ export default function LoginPage() {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${window.location.origin}/auth/callback`,
+          redirectTo: `${window.location.origin}/topics`,
         },
       })
       if (error) throw error
@@ -35,7 +36,7 @@ export default function LoginPage() {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'github',
         options: {
-          redirectTo: `${window.location.origin}/auth/callback`,
+          redirectTo: `${window.location.origin}/topics`,
         },
       })
       if (error) throw error
@@ -54,7 +55,7 @@ export default function LoginPage() {
       const { error } = await supabase.auth.signInWithOtp({
         email,
         options: {
-          emailRedirectTo: `${window.location.origin}/auth/callback`,
+          emailRedirectTo: `${window.location.origin}/topics`,
         },
       })
       if (error) throw error
@@ -68,9 +69,7 @@ export default function LoginPage() {
   }
 
   const tryWithoutAccount = () => {
-    // Set anonymous flag in localStorage
-    localStorage.setItem('anonymous', 'true')
-    router.push('/feed')
+    router.push('/topics')
   }
 
   return (
