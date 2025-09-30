@@ -10,8 +10,22 @@ export default function AuthCallback() {
   useEffect(() => {
     const handleCallback = async () => {
       try {
-        // Get session from URL hash
-        const { data, error } = await supabase.auth.getSession()
+        // Parse hash fragment for tokens
+        const hashParams = new URLSearchParams(window.location.hash.substring(1))
+        const accessToken = hashParams.get('access_token')
+        const refreshToken = hashParams.get('refresh_token')
+
+        if (!accessToken) {
+          console.error('No access token in URL')
+          router.push('/login?error=no_token')
+          return
+        }
+
+        // Set session from tokens
+        const { data, error } = await supabase.auth.setSession({
+          access_token: accessToken,
+          refresh_token: refreshToken || '',
+        })
 
         if (error) {
           console.error('Auth callback error:', error)
