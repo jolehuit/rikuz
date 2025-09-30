@@ -1,42 +1,55 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import { createClient } from '@/utils/supabase/client'
 import { useRouter } from 'next/navigation'
 
 export default function LogoutPage() {
   const router = useRouter()
+  const hasLoggedOut = useRef(false)
 
   useEffect(() => {
+    if (hasLoggedOut.current) {
+      console.log('[LOGOUT] Already logged out, skipping')
+      return
+    }
+
+    hasLoggedOut.current = true
+
     const logout = async () => {
       console.log('[LOGOUT] Starting logout process')
       const supabase = createClient()
 
       try {
-        // Sign out from Supabase
-        const { error } = await supabase.auth.signOut()
-
-        if (error) {
-          console.error('[LOGOUT] Error signing out:', error)
-        } else {
-          console.log('[LOGOUT] Successfully signed out from Supabase')
-        }
-
-        // Clear anonymous mode
+        // Clear anonymous mode first
         localStorage.removeItem('anonymous')
         console.log('[LOGOUT] Cleared localStorage')
 
-        // Redirect to login
-        console.log('[LOGOUT] Redirecting to /login')
-        router.push('/login')
+        // Sign out from Supabase (with timeout)
+        console.log('[LOGOUT] Calling signOut...')
+        const signOutPromise = supabase.auth.signOut()
+        const timeoutPromise = new Promise((_, reject) =>
+          setTimeout(() => reject(new Error('Timeout')), 3000)
+        )
+
+        try {
+          await Promise.race([signOutPromise, timeoutPromise])
+          console.log('[LOGOUT] Successfully signed out from Supabase')
+        } catch (timeoutError) {
+          console.warn('[LOGOUT] SignOut timed out, proceeding with redirect anyway')
+        }
+
+        // Force hard redirect to clear all state
+        console.log('[LOGOUT] Redirecting to /login with hard refresh')
+        window.location.href = '/login'
       } catch (error) {
         console.error('[LOGOUT] Unexpected error during logout:', error)
-        router.push('/login')
+        window.location.href = '/login'
       }
     }
 
     logout()
-  }, [router])
+  }, [])
 
   return (
     <div className="container mx-auto px-4 py-8">
