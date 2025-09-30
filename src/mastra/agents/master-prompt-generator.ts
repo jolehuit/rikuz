@@ -75,19 +75,17 @@ export class MasterPromptGenerator {
   }): string {
     const sections = []
 
-    // 1. Role Definition (optimized for Gemini web search)
-    sections.push(
-      `You are an expert content discovery agent specializing in "${topic.title}".`,
-      `Your mission: Find the most relevant, current, and valuable content using web search capabilities.`
-    )
+    // 1. Role Definition - Use the actual user intent directly
+    sections.push(`You are an expert content discovery agent.`)
+    sections.push(`Your mission: ${context}`)
 
-    // 2. Topic Context
-    const topicDescription = topic.description
-      ? `Topic: ${topic.title} - ${topic.description}`
-      : `Topic: ${topic.title}`
-
-    sections.push(`\nTOPIC FOCUS:\n${topicDescription}`)
-    sections.push(`Context: ${context}`)
+    // 2. Topic Context - Use the user's words exactly as they intended
+    sections.push(`\nTOPIC:`)
+    sections.push(`"${topic.title}"`)
+    if (topic.description) {
+      sections.push(`\nDETAILS:`)
+      sections.push(`${topic.description}`)
+    }
 
     // 3. Search Strategy
     sections.push('\nSEARCH STRATEGY:')
@@ -181,80 +179,36 @@ IMPORTANT OUTPUT RULES:
   }
 
   private buildWebSearchInstructions(sources: string[], keywords: string[]): string {
-    const searchQueries = this.generateSearchQueries(keywords, sources)
-
     return `
 WEB SEARCH EXECUTION:
-Use your web search capabilities to find content from these sources:
+Use your web search capabilities to discover content that matches the topic intent.
 
-Primary Search Queries:
-${searchQueries.primary.map((query) => `- "${query}"`).join('\n')}
+Available Keywords (use intelligently, not literally):
+${keywords
+  .slice(0, 10)
+  .map((kw) => `- ${kw}`)
+  .join('\n')}
 
-Secondary Search Queries (if needed):
-${searchQueries.secondary.map((query) => `- "${query}"`).join('\n')}
-
-Platform-Specific Search Tips:
-- GitHub: Include "repo:" or "code:" for repositories, "issue:" for discussions
-- Reddit: Use "site:reddit.com" with subreddit names when relevant
-- Stack Overflow: Focus on answered questions with high votes
-- Academic: Include "paper", "research", "study" in queries
-- News: Use recent time filters and authoritative news sources
-- Blogs: Look for established tech blogs and personal developer experiences
+Suggested Sources (prioritize but not limit to):
+${sources.map((src) => `- ${src}`).join('\n')}
 
 SEARCH PROCESS:
-1. Execute multiple targeted searches using different keyword combinations
-2. Evaluate each result for topic relevance and content quality
-3. Prioritize recent, authoritative, and unique content
-4. Ensure representation from multiple prioritized sources
-5. Format results according to the JSON schema provided`
-  }
+1. Understand the user's actual intent from the topic title and description
+2. Construct appropriate search queries that match this intent
+3. Use the suggested sources and keywords as guidance, not rigid constraints
+4. Execute web searches using your best judgment for query construction
+5. Evaluate results for relevance to the ACTUAL user intent
+6. Prioritize recent, authoritative, and unique content
+7. Format results according to the JSON schema provided
 
-  private generateSearchQueries(
-    keywords: string[],
-    sources: string[]
-  ): {
-    primary: string[]
-    secondary: string[]
-  } {
-    const primary = []
-    const secondary = []
-
-    // Primary queries - most focused
-    if (keywords.length >= 2) {
-      primary.push(`${keywords[0]} ${keywords[1]}`)
-    }
-    if (keywords.length >= 3) {
-      primary.push(`${keywords[0]} ${keywords[2]}`)
-      primary.push(`${keywords[1]} ${keywords[2]}`)
-    }
-
-    // Add source-specific queries
-    if (sources.includes('github')) {
-      primary.push(`${keywords[0]} site:github.com`)
-    }
-    if (sources.includes('stackoverflow')) {
-      primary.push(`${keywords[0]} site:stackoverflow.com`)
-    }
-
-    // Secondary queries - broader exploration
-    keywords.slice(0, 5).forEach((keyword) => {
-      secondary.push(keyword)
-    })
-
-    // Combination queries
-    if (keywords.length >= 4) {
-      secondary.push(`${keywords[0]} ${keywords[3]}`)
-      secondary.push(`${keywords[1]} ${keywords[3]}`)
-    }
-
-    return { primary, secondary }
+IMPORTANT: Your goal is to fulfill the user's intent, not just match keywords blindly.`
   }
 
   /**
    * Updates Master Prompt when user preferences change
    */
   regenerateMasterPrompt(
-    currentPrompt: string,
+    _currentPrompt: string,
     newPreferences: TopicContext['userPreferences'],
     topicContext: TopicContext,
     categorizationResult: CategorizationResult
