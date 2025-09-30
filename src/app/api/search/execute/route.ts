@@ -1,5 +1,6 @@
 import { createClient } from '@/utils/supabase/server'
 import { executeSearchWithRetry } from '@/services/search-service'
+import { AgentService } from '@/services/agent-service'
 import { NextResponse } from 'next/server'
 
 /**
@@ -31,7 +32,7 @@ export async function POST(request: Request) {
     // Verify topic exists and belongs to user
     const { data: topic, error: topicError } = await supabase
       .from('topics')
-      .select('id, user_id, title')
+      .select('id, user_id, title, description, master_prompt')
       .eq('id', topicId)
       .eq('user_id', user.id)
       .single()
@@ -40,35 +41,31 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Topic not found or access denied' }, { status: 404 })
     }
 
-    // Get agent for this topic
-    const { data: agent, error: agentError } = await supabase
-      .from('agents')
-      .select('agent_id, status')
-      .eq('user_id', user.id)
-      .eq('topic_id', topicId)
-      .single()
+    // Get or create agent for this topic
+    const masterPrompt =
+      topic.master_prompt || `Find articles about ${topic.title}. ${topic.description || ''}`
 
-    if (agentError || !agent) {
-      return NextResponse.json(
-        { error: 'Agent not found for this topic. Please create an agent first.' },
-        { status: 404 }
-      )
-    }
+    const { agentData } = await AgentService.getOrCreateAgent(
+      user.id,
+      topicId,
+      topic.title,
+      masterPrompt
+    )
 
-    if (agent.status !== 'active') {
+    if (agentData.status !== 'active') {
       return NextResponse.json(
-        { error: `Agent is not active (status: ${agent.status})` },
+        { error: `Agent is not active (status: ${agentData.status})` },
         { status: 400 }
       )
     }
 
     // Execute search with retry logic
-    const searchResults = await executeSearchWithRetry(agent.agent_id, 3)
+    const searchResults = await executeSearchWithRetry(agentData.agent_id, 3)
 
     return NextResponse.json({
       success: true,
       topic: topic.title,
-      agentId: agent.agent_id,
+      agentId: agentData.agent_id,
       results: searchResults,
     })
   } catch (error) {
