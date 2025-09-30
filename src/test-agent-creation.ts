@@ -40,10 +40,6 @@ const MASTER_PROMPT_1 = `You are a specialized agent for searching React perform
 Focus on: GitHub repositories, technical blogs, Reddit r/reactjs.
 Keywords: React, performance, optimization, hooks, rendering.`
 
-const _MASTER_PROMPT_2 = `You are a specialized agent for searching AI news topics.
-Focus on: AI research papers, tech news, HackerNews.
-Keywords: AI, machine learning, LLM, neural networks.`
-
 /**
  * Test 1: Agent ID generation follows correct pattern
  */

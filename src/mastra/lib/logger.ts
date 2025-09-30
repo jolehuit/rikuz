@@ -11,7 +11,7 @@ class Logger {
     this.prefix = prefix
   }
 
-  private formatMessage(level: LogLevel, message: string, ..._args: unknown[]) {
+  private formatMessage(level: LogLevel, message: string) {
     const timestamp = new Date().toISOString()
     return `${timestamp} ${this.prefix} [${level.toUpperCase()}] ${message}`
   }

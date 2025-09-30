@@ -86,7 +86,7 @@ export async function GET(request: Request) {
 }
 
 /**
- * Runtime configuration for Vercel Edge Functions
- * maxDuration: Maximum execution time in seconds (10 minutes for daily cron)
+ * Runtime configuration for Vercel Serverless Functions
+ * maxDuration: Maximum execution time in seconds (5 minutes - Hobby plan limit)
  */
-export const maxDuration = 600 // 10 minutes
+export const maxDuration = 300 // 5 minutes (Vercel Hobby plan limit)

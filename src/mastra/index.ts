@@ -2,6 +2,10 @@ import { Mastra } from '@mastra/core'
 import { google } from '@ai-sdk/google'
 import pino from 'pino'
 
+// Disable Mastra telemetry warning
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+;(globalThis as any).___MASTRA_TELEMETRY___ = true
+
 // Logger for cost tracking and monitoring
 export const logger = pino({
   level: process.env.NODE_ENV === 'production' ? 'info' : 'debug',
