@@ -27,19 +27,22 @@ interface SavedItem {
 
 export default function ReadLaterPage() {
   const router = useRouter()
-  const { user } = useAuth()
+  const { user, loading: authLoading } = useAuth()
 
   const [savedItems, setSavedItems] = useState<SavedItem[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
+    if (authLoading) return // Wait for auth to load
+
     if (!user) {
       router.push('/login')
       return
     }
 
     loadSavedItems()
-  }, [user, router])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user, authLoading])
 
   const loadSavedItems = async () => {
     setLoading(true)
@@ -70,6 +73,14 @@ export default function ReadLaterPage() {
     } catch (error) {
       console.error('Failed to remove item:', error)
     }
+  }
+
+  if (authLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <p>Loading...</p>
+      </div>
+    )
   }
 
   if (!user) return null

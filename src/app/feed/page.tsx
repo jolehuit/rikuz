@@ -30,7 +30,7 @@ interface DailySummaryType {
 function FeedContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const { user } = useAuth()
+  const { user, loading: authLoading } = useAuth()
 
   const [items, setItems] = useState<FeedItemWithFeedback[]>([])
   const [dailySummaries, setDailySummaries] = useState<DailySummaryType[]>([])
@@ -97,6 +97,8 @@ function FeedContent() {
   )
 
   useEffect(() => {
+    if (authLoading) return // Wait for auth to load
+
     if (!user) {
       router.push('/login')
       return
@@ -104,7 +106,7 @@ function FeedContent() {
 
     loadItems(0, selectedTopic)
     loadDailySummaries(selectedTopic)
-  }, [user, selectedTopic, loadItems, loadDailySummaries, router])
+  }, [user, authLoading, selectedTopic, loadItems, loadDailySummaries, router])
 
   const loadMore = () => {
     const nextPage = page + 1
@@ -122,6 +124,14 @@ function FeedContent() {
     setSelectedTopic(null)
     setPage(0)
     router.push('/feed')
+  }
+
+  if (authLoading) {
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <p>Loading...</p>
+      </div>
+    )
   }
 
   if (!user) return null

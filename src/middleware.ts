@@ -3,13 +3,6 @@ import { updateSession } from '@/utils/supabase/middleware'
 import { NextResponse } from 'next/server'
 
 export async function middleware(request: NextRequest) {
-  const { pathname } = request.nextUrl
-
-  // Root route logic - redirect to topics
-  if (pathname === '/') {
-    return NextResponse.redirect(new URL('/topics', request.url))
-  }
-
   // Update user's auth session
   return await updateSession(request)
 }
