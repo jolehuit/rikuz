@@ -41,6 +41,7 @@ function FeedContent() {
 
   const loadItems = useCallback(
     async (pageNum: number, topicFilter: string | null) => {
+      console.log('[FEED] loadItems called', { pageNum, topicFilter, hasUser: !!user })
       if (!user) return
 
       setLoading(true)
@@ -54,8 +55,13 @@ function FeedContent() {
           params.append('topic', topicFilter)
         }
 
+        console.log('[FEED] Fetching /api/feed with params:', params.toString())
         const response = await fetch(`/api/feed?${params.toString()}`)
         const data = await response.json()
+        console.log('[FEED] Received data:', {
+          itemsCount: data.items?.length,
+          hasMore: data.hasMore,
+        })
 
         if (pageNum === 0) {
           setItems(data.items)
@@ -65,7 +71,7 @@ function FeedContent() {
 
         setHasMore(data.hasMore)
       } catch (error) {
-        console.error('Failed to load feed items:', error)
+        console.error('[FEED] Failed to load feed items:', error)
       } finally {
         setLoading(false)
       }
@@ -75,6 +81,7 @@ function FeedContent() {
 
   const loadDailySummaries = useCallback(
     async (topicFilter: string | null) => {
+      console.log('[FEED] loadDailySummaries called', { topicFilter, hasUser: !!user })
       if (!user) return
 
       try {
@@ -86,24 +93,33 @@ function FeedContent() {
         const today = new Date().toISOString().split('T')[0]
         params.append('date', today)
 
+        console.log('[FEED] Fetching /api/daily-summaries with params:', params.toString())
         const response = await fetch(`/api/daily-summaries?${params.toString()}`)
         const data = await response.json()
+        console.log('[FEED] Received summaries:', data.summaries?.length || 0)
         setDailySummaries(data.summaries || [])
       } catch (error) {
-        console.error('Failed to load daily summaries:', error)
+        console.error('[FEED] Failed to load daily summaries:', error)
       }
     },
     [user]
   )
 
   useEffect(() => {
-    if (authLoading) return // Wait for auth to load
+    console.log('[FEED] useEffect triggered', { user: !!user, authLoading, selectedTopic })
+
+    if (authLoading) {
+      console.log('[FEED] Still loading auth, skipping')
+      return
+    }
 
     if (!user) {
+      console.log('[FEED] No user, redirecting to /login')
       router.push('/login')
       return
     }
 
+    console.log('[FEED] Calling loadItems and loadDailySummaries')
     loadItems(0, selectedTopic)
     loadDailySummaries(selectedTopic)
     // eslint-disable-next-line react-hooks/exhaustive-deps

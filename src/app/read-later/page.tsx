@@ -33,25 +33,35 @@ export default function ReadLaterPage() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    if (authLoading) return // Wait for auth to load
+    console.log('[READ_LATER] useEffect triggered', { user: !!user, authLoading })
+
+    if (authLoading) {
+      console.log('[READ_LATER] Still loading auth, skipping')
+      return
+    }
 
     if (!user) {
+      console.log('[READ_LATER] No user, redirecting to /login')
       router.push('/login')
       return
     }
 
+    console.log('[READ_LATER] Calling loadSavedItems')
     loadSavedItems()
   }, [user, authLoading, router])
 
   const loadSavedItems = async () => {
+    console.log('[READ_LATER] loadSavedItems called')
     setLoading(true)
     try {
       const response = await fetch('/api/saved-items')
       const data = await response.json()
+      console.log('[READ_LATER] Received saved items:', data.savedItems?.length || 0)
       setSavedItems(data.savedItems || [])
     } catch (error) {
-      console.error('Failed to load saved items:', error)
+      console.error('[READ_LATER] Failed to load saved items:', error)
     } finally {
+      console.log('[READ_LATER] Setting loading to false')
       setLoading(false)
     }
   }

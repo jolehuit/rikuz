@@ -11,24 +11,29 @@ export function useAuth() {
   const [isAnonymous, setIsAnonymous] = useState(false)
 
   useEffect(() => {
+    console.log('[useAuth] useEffect mounted')
+
     // Check initial auth state
     const getInitialUser = async () => {
+      console.log('[useAuth] getInitialUser called')
       try {
         const {
           data: { user },
           error,
         } = await supabase.auth.getUser()
 
-        console.log('useAuth getUser:', { user, error })
+        console.log('[useAuth] getUser result:', { user: !!user, userId: user?.id, error })
 
         setUser(user)
 
         // Check if in anonymous mode
         const anonymous = localStorage.getItem('anonymous') === 'true'
         setIsAnonymous(anonymous && !user)
+        console.log('[useAuth] isAnonymous:', anonymous && !user)
       } catch (error) {
-        console.error('Error in getInitialUser:', error)
+        console.error('[useAuth] Error in getInitialUser:', error)
       } finally {
+        console.log('[useAuth] Setting loading to false')
         setLoading(false)
       }
     }
@@ -39,12 +44,17 @@ export function useAuth() {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log('[useAuth] Auth state changed:', event, {
+        hasSession: !!session,
+        userId: session?.user?.id,
+      })
       setUser(session?.user || null)
       setIsAnonymous(false)
       setLoading(false)
 
       // Create user profile if signing in
       if (event === 'SIGNED_IN' && session?.user) {
+        console.log('[useAuth] Creating/updating user profile')
         await supabase
           .from('users')
           .upsert({
@@ -57,6 +67,7 @@ export function useAuth() {
     })
 
     return () => {
+      console.log('[useAuth] useEffect cleanup')
       subscription.unsubscribe()
     }
   }, [])

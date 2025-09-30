@@ -44,10 +44,14 @@ export default function TopicsPage() {
   const supabase = createClient()
 
   useEffect(() => {
+    console.log('[TOPICS] useEffect mounted')
+
     const checkAuth = async () => {
+      console.log('[TOPICS] checkAuth called')
       const {
         data: { session },
       } = await supabase.auth.getSession()
+      console.log('[TOPICS] session:', !!session)
       setIsAnonymous(!session)
       fetchTopics()
     }
@@ -57,16 +61,21 @@ export default function TopicsPage() {
     // Listen for auth state changes
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
+    } = supabase.auth.onAuthStateChange((event, session) => {
+      console.log('[TOPICS] auth state changed:', event, !!session)
       setIsAnonymous(!session)
       fetchTopics()
     })
 
-    return () => subscription.unsubscribe()
+    return () => {
+      console.log('[TOPICS] useEffect cleanup')
+      subscription.unsubscribe()
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   const fetchTopics = async () => {
+    console.log('[TOPICS] fetchTopics called')
     try {
       const { data, error } = await supabase
         .from('topics')
@@ -79,10 +88,12 @@ export default function TopicsPage() {
         .order('created_at', { ascending: false })
 
       if (error) throw error
+      console.log('[TOPICS] Received topics:', data?.length || 0)
       setTopics(data || [])
     } catch (error) {
-      console.error('Error fetching topics:', error)
+      console.error('[TOPICS] Error fetching topics:', error)
     } finally {
+      console.log('[TOPICS] Setting loading to false')
       setLoading(false)
     }
   }
