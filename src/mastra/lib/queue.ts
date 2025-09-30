@@ -1,10 +1,10 @@
 import { logger, RATE_LIMIT_CONFIG } from '../index'
 
-interface QueueItem {
+interface QueueItem<T = unknown> {
   id: string
   agentId: string
-  execute: () => Promise<unknown>
-  resolve: (value: unknown) => void
+  execute: () => Promise<T>
+  resolve: (value: T) => void
   reject: (error: unknown) => void
   retryCount: number
   maxRetries: number
@@ -12,7 +12,8 @@ interface QueueItem {
 }
 
 class GeminiRateLimitQueue {
-  private queue: QueueItem[] = []
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  private queue: QueueItem<any>[] = []
   private processing = false
   private requestTimes: number[] = []
 
@@ -45,7 +46,7 @@ class GeminiRateLimitQueue {
 
   async add<T>(agentId: string, operation: () => Promise<T>, maxRetries = 3): Promise<T> {
     return new Promise<T>((resolve, reject) => {
-      const queueItem: QueueItem = {
+      const queueItem: QueueItem<T> = {
         id: `${agentId}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
         agentId,
         execute: operation,

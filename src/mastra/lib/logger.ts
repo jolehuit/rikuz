@@ -24,7 +24,8 @@ class Logger {
     console.warn(this.formatMessage('warn', message), ...args)
   }
 
-  error(message: string, ...args: unknown[]) {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  error(message: string, ...args: any[]) {
     console.error(this.formatMessage('error', message), ...args)
   }
 

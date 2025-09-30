@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { categorizationService } from '@/lib/services/categorization-service'
-import { logger } from '@/mastra/index'
+import { logger } from '@/mastra/lib/logger'
 
 export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {

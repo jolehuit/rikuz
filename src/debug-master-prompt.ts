@@ -1,7 +1,7 @@
 // Debug script for Master Prompt validation
 import 'dotenv/config'
-import { masterPromptGenerator } from './mastra/agents/master-prompt-generator'
-import type { CategorizationResult, TopicContext } from './mastra/agents/master-prompt-generator'
+import { masterPromptGenerator, type TopicContext } from './mastra/agents/master-prompt-generator'
+import type { CategorizationResult } from './mastra/agents/categorization-agent'
 
 const sampleCategorizationResult: CategorizationResult = {
   sources: ['github', 'stackoverflow', 'blogs', 'medium'],

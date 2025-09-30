@@ -1,5 +1,5 @@
 import { google } from '@ai-sdk/google'
-import { generateText } from 'ai'
+import { generateText, stepCountIs } from 'ai'
 import { createClient } from '@supabase/supabase-js'
 import { AgentService } from './agent-service'
 import { logger } from '@/mastra/lib/logger'
@@ -86,21 +86,20 @@ export async function executeSearch(agentId: string): Promise<SearchResponse> {
 
     // Execute search using Gemini with Google Search grounding
     const { text, sources, providerMetadata } = await generateText({
-      model: google('gemini-2.5-flash', {
-        apiKey: process.env.GOOGLE_GENERATIVE_AI_API_KEY,
-      }),
+      model: google('gemini-2.5-flash'),
       tools: {
         google_search: google.tools.googleSearch({}),
       },
       prompt: searchPrompt,
-      maxSteps: 5,
+      stopWhen: stepCountIs(5),
     })
 
     const searchResults = { text, sources, providerMetadata }
 
     // Extract search queries from metadata
-    const searchQueries =
-      searchResults.providerMetadata?.google?.groundingMetadata?.webSearchQueries
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const searchQueries = (searchResults.providerMetadata?.google?.groundingMetadata as any)
+      ?.webSearchQueries
 
     // Parse results from text response
     const parsedResults = parseSearchResults(

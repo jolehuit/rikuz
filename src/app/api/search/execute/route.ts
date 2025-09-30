@@ -31,7 +31,7 @@ export async function POST(request: Request) {
     // Verify topic exists and belongs to user
     const { data: topic, error: topicError } = await supabase
       .from('topics')
-      .select('id, user_id, name')
+      .select('id, user_id, title')
       .eq('id', topicId)
       .eq('user_id', user.id)
       .single()
@@ -67,7 +67,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json({
       success: true,
-      topic: topic.name,
+      topic: topic.title,
       agentId: agent.agent_id,
       results: searchResults,
     })

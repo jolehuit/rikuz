@@ -1,6 +1,6 @@
 import { masterPromptGenerator, type TopicContext } from '@/mastra/agents/master-prompt-generator'
 import type { CategorizationResult } from '@/mastra/agents/categorization-agent'
-import { logger } from '@/mastra/index'
+import { logger } from '@/mastra/lib/logger'
 import { createClient } from '@supabase/supabase-js'
 
 // Supabase client for database operations
@@ -364,7 +364,7 @@ export class MasterPromptService {
     generatorStatus: Record<string, unknown>
     totalTopics: number
     topicsWithMasterPrompts: number
-    recentActivity: Record<string, unknown>
+    recentActivity: unknown[]
     validationStats: { valid: number; invalid: number }
   }> {
     try {

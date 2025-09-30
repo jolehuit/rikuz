@@ -3,7 +3,7 @@ import {
   type CategorizationResult,
 } from '@/mastra/agents/categorization-agent'
 import { masterPromptService } from './master-prompt-service'
-import { logger } from '@/mastra/index'
+import { logger } from '@/mastra/lib/logger'
 import { createClient } from '@supabase/supabase-js'
 
 // Supabase client for database operations

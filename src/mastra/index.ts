@@ -19,9 +19,7 @@ export const logger = pino({
 })
 
 // Gemini 2.5 Flash model configuration
-export const gemini = google('gemini-2.5-flash', {
-  apiKey: process.env.GOOGLE_GENERATIVE_AI_API_KEY,
-})
+export const gemini = google('gemini-2.5-flash')
 
 // Rate limiting configuration for Gemini API (60 requests per minute)
 export const RATE_LIMIT_CONFIG = {
@@ -32,7 +30,6 @@ export const RATE_LIMIT_CONFIG = {
 // Main Mastra instance configuration
 export const mastra = new Mastra({
   agents: {},
-  tools: {},
   workflows: {},
 })
 
