@@ -44,18 +44,16 @@ export default function TopicsPage() {
   const supabase = createClient()
 
   useEffect(() => {
+    const checkAuth = async () => {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession()
+      setIsAnonymous(!session)
+      fetchTopics()
+    }
+
     checkAuth()
-  }, [])
 
-  const checkAuth = async () => {
-    const {
-      data: { session },
-    } = await supabase.auth.getSession()
-    setIsAnonymous(!session)
-    fetchTopics()
-  }
-
-  useEffect(() => {
     // Listen for auth state changes
     const {
       data: { subscription },
@@ -65,6 +63,7 @@ export default function TopicsPage() {
     })
 
     return () => subscription.unsubscribe()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   const fetchTopics = async () => {

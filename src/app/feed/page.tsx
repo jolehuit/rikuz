@@ -106,7 +106,8 @@ function FeedContent() {
 
     loadItems(0, selectedTopic)
     loadDailySummaries(selectedTopic)
-  }, [user, authLoading, selectedTopic, loadItems, loadDailySummaries, router])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user, authLoading, selectedTopic, router])
 
   const loadMore = () => {
     const nextPage = page + 1

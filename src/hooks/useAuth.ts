@@ -13,16 +13,24 @@ export function useAuth() {
   useEffect(() => {
     // Check initial auth state
     const getInitialUser = async () => {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser()
-      setUser(user)
+      try {
+        const {
+          data: { user },
+          error,
+        } = await supabase.auth.getUser()
 
-      // Check if in anonymous mode
-      const anonymous = localStorage.getItem('anonymous') === 'true'
-      setIsAnonymous(anonymous && !user)
+        console.log('useAuth getUser:', { user, error })
 
-      setLoading(false)
+        setUser(user)
+
+        // Check if in anonymous mode
+        const anonymous = localStorage.getItem('anonymous') === 'true'
+        setIsAnonymous(anonymous && !user)
+      } catch (error) {
+        console.error('Error in getInitialUser:', error)
+      } finally {
+        setLoading(false)
+      }
     }
 
     getInitialUser()

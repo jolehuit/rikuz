@@ -41,8 +41,7 @@ export default function ReadLaterPage() {
     }
 
     loadSavedItems()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user, authLoading])
+  }, [user, authLoading, router])
 
   const loadSavedItems = async () => {
     setLoading(true)
