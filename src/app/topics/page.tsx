@@ -38,6 +38,8 @@ export default function TopicsPage() {
   const [newTopic, setNewTopic] = useState({ title: '', description: '', keywords: '' })
   const [isDeleting, setIsDeleting] = useState<string | null>(null)
   const [isAnonymous, setIsAnonymous] = useState(false)
+  const [isExecutingSearch, setIsExecutingSearch] = useState(false)
+  const [searchMessage, setSearchMessage] = useState('')
   const router = useRouter()
   const supabase = createClient()
 
@@ -90,6 +92,7 @@ export default function TopicsPage() {
     if (!newTopic.title.trim()) return
 
     try {
+      setLoading(true)
       const {
         data: { user },
       } = await supabase.auth.getUser()
@@ -100,20 +103,56 @@ export default function TopicsPage() {
         .map((k) => k.trim())
         .filter((k) => k.length > 0)
 
-      const { error } = await supabase.from('topics').insert({
-        title: newTopic.title.trim(),
-        description: newTopic.description.trim() || null,
-        keywords,
-        user_id: user.id,
-      })
+      const { data: newTopicData, error } = await supabase
+        .from('topics')
+        .insert({
+          title: newTopic.title.trim(),
+          description: newTopic.description.trim() || null,
+          keywords,
+          user_id: user.id,
+        })
+        .select()
+        .single()
 
       if (error) throw error
 
       setNewTopic({ title: '', description: '', keywords: '' })
       setIsCreateModalOpen(false)
+
+      // Trigger search execution for the new topic
+      setIsExecutingSearch(true)
+      setSearchMessage('Creating topic and fetching articles...')
+
+      const response = await fetch('/api/search/execute', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          topicId: newTopicData.id,
+        }),
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to execute search')
+      }
+
+      const result = await response.json()
+      setSearchMessage(
+        `Search completed! Found ${result.articles?.length || 0} articles. Categorizing...`
+      )
+
+      // Wait a bit to show the message
+      await new Promise((resolve) => setTimeout(resolve, 1500))
+
+      setIsExecutingSearch(false)
+      setSearchMessage('')
       fetchTopics()
     } catch (error) {
       console.error('Error creating topic:', error)
+      setIsExecutingSearch(false)
+      setSearchMessage('')
+      setLoading(false)
     }
   }
 
@@ -139,11 +178,13 @@ export default function TopicsPage() {
     }
   }
 
-  if (loading) {
+  if (loading || isExecutingSearch) {
     return (
       <div className="container mx-auto p-6">
-        <div className="flex justify-center items-center h-32">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+        <div className="flex flex-col justify-center items-center h-64 gap-4">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+          {searchMessage && <p className="text-lg text-gray-600 animate-pulse">{searchMessage}</p>}
+          {!searchMessage && <p className="text-gray-600">Loading...</p>}
         </div>
       </div>
     )
