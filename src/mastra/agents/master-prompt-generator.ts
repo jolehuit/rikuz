@@ -75,9 +75,18 @@ export class MasterPromptGenerator {
   }): string {
     const sections = []
 
+    // Get current date for temporal context
+    const today = new Date()
+    const dateStr = today.toISOString().split('T')[0] // YYYY-MM-DD
+    const dayName = today.toLocaleDateString('en-US', { weekday: 'long' })
+
     // 1. Role Definition - Use the actual user intent directly
     sections.push(`You are an expert content discovery agent.`)
     sections.push(`Your mission: ${context}`)
+    sections.push(`\nCURRENT DATE: ${dayName}, ${dateStr}`)
+    sections.push(
+      `IMPORTANT: You are searching on ${dateStr}. Only return content from TODAY or YESTERDAY (last 24-48 hours maximum).`
+    )
 
     // 2. Topic Context - Use the user's words exactly as they intended
     sections.push(`\nTOPIC:`)
@@ -107,7 +116,10 @@ export class MasterPromptGenerator {
 
     // 4. Content Quality Criteria
     sections.push('\nCONTENT QUALITY CRITERIA:')
-    sections.push('- Prioritize recent content (last 2 years preferred)')
+    sections.push(
+      `- CRITICAL: Content MUST be from ${dateStr} (today) or ${new Date(Date.now() - 86400000).toISOString().split('T')[0]} (yesterday) ONLY`
+    )
+    sections.push('- REJECT any content older than 48 hours')
     sections.push('- Focus on authoritative sources and expert opinions')
     sections.push('- Include practical examples and actionable insights')
     sections.push('- Avoid duplicate or heavily overlapping content')
@@ -179,6 +191,9 @@ IMPORTANT OUTPUT RULES:
   }
 
   private buildWebSearchInstructions(sources: string[], keywords: string[]): string {
+    const today = new Date().toISOString().split('T')[0]
+    const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0]
+
     return `
 WEB SEARCH EXECUTION:
 Use your web search capabilities to discover content that matches the topic intent.
@@ -192,16 +207,24 @@ ${keywords
 Suggested Sources (prioritize but not limit to):
 ${sources.map((src) => `- ${src}`).join('\n')}
 
+TEMPORAL FILTERS (CRITICAL):
+- Today's date: ${today}
+- Yesterday's date: ${yesterday}
+- Use time filters: "after:${yesterday}" or "past 24 hours" or "today" in your searches
+- For news sites, look for dates ${yesterday} or ${today} ONLY
+- REJECT any results with older dates
+
 SEARCH PROCESS:
 1. Understand the user's actual intent from the topic title and description
 2. Construct appropriate search queries that match this intent
-3. Use the suggested sources and keywords as guidance, not rigid constraints
-4. Execute web searches using your best judgment for query construction
-5. Evaluate results for relevance to the ACTUAL user intent
-6. Prioritize recent, authoritative, and unique content
-7. Format results according to the JSON schema provided
+3. ADD temporal filters to EVERY search query (e.g., "topic after:${yesterday}")
+4. Use the suggested sources and keywords as guidance, not rigid constraints
+5. Execute web searches using your best judgment for query construction
+6. Verify publication dates - ONLY include content from last 24-48 hours
+7. Evaluate results for relevance to the ACTUAL user intent
+8. Format results according to the JSON schema provided
 
-IMPORTANT: Your goal is to fulfill the user's intent, not just match keywords blindly.`
+IMPORTANT: Your goal is to fulfill the user's intent with RECENT content only, not just match keywords blindly.`
   }
 
   /**
