@@ -146,7 +146,10 @@ function FeedContent() {
   if (authLoading) {
     return (
       <div className="container mx-auto px-4 py-8">
-        <p>Loading...</p>
+        <div className="flex flex-col justify-center items-center h-64 gap-4">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+          <p className="text-gray-600">Loading...</p>
+        </div>
       </div>
     )
   }

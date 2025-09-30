@@ -12,6 +12,7 @@ export function useAuth() {
 
   useEffect(() => {
     console.log('[useAuth] useEffect mounted')
+    let isMounted = true
 
     // Check initial auth state
     const getInitialUser = async () => {
@@ -22,7 +23,17 @@ export function useAuth() {
           error,
         } = await supabase.auth.getUser()
 
-        console.log('[useAuth] getUser result:', { user: !!user, userId: user?.id, error })
+        console.log('[useAuth] getUser result:', {
+          user: !!user,
+          userId: user?.id,
+          error,
+          isMounted,
+        })
+
+        if (!isMounted) {
+          console.log('[useAuth] Component unmounted, skipping state update')
+          return
+        }
 
         setUser(user)
 
@@ -33,8 +44,10 @@ export function useAuth() {
       } catch (error) {
         console.error('[useAuth] Error in getInitialUser:', error)
       } finally {
-        console.log('[useAuth] Setting loading to false')
-        setLoading(false)
+        if (isMounted) {
+          console.log('[useAuth] Setting loading to false')
+          setLoading(false)
+        }
       }
     }
 
@@ -47,7 +60,11 @@ export function useAuth() {
       console.log('[useAuth] Auth state changed:', event, {
         hasSession: !!session,
         userId: session?.user?.id,
+        isMounted,
       })
+
+      if (!isMounted) return
+
       setUser(session?.user || null)
       setIsAnonymous(false)
       setLoading(false)
@@ -67,7 +84,8 @@ export function useAuth() {
     })
 
     return () => {
-      console.log('[useAuth] useEffect cleanup')
+      console.log('[useAuth] useEffect cleanup - setting isMounted to false')
+      isMounted = false
       subscription.unsubscribe()
     }
   }, [])
