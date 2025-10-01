@@ -25,6 +25,8 @@ interface Topic {
   description: string | null
   keywords: string[] | null
   status: string | null
+  search_status: 'pending' | 'searching' | 'completed' | 'failed'
+  last_search_at: string | null
   created_at: string
   updated_at: string
   user_id: string
@@ -103,65 +105,44 @@ export default function TopicsPage() {
 
     try {
       setLoading(true)
-      const {
-        data: { user },
-      } = await supabase.auth.getUser()
-      if (!user) throw new Error('User not authenticated')
 
       const keywords = newTopic.keywords
         .split(',')
         .map((k) => k.trim())
         .filter((k) => k.length > 0)
 
-      const { data: newTopicData, error } = await supabase
-        .from('topics')
-        .insert({
-          title: newTopic.title.trim(),
-          description: newTopic.description.trim() || null,
-          keywords,
-          user_id: user.id,
-        })
-        .select()
-        .single()
-
-      if (error) throw error
-
-      setNewTopic({ title: '', description: '', keywords: '' })
-      setIsCreateModalOpen(false)
-
-      // Trigger search execution for the new topic
-      setIsExecutingSearch(true)
-      setSearchMessage('Creating topic and fetching articles...')
-
-      const response = await fetch('/api/search/execute', {
+      // Create topic via API (also creates background job)
+      const response = await fetch('/api/topics', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          topicId: newTopicData.id,
+          title: newTopic.title.trim(),
+          description: newTopic.description.trim() || null,
+          keywords,
         }),
       })
 
       if (!response.ok) {
-        throw new Error('Failed to execute search')
+        throw new Error('Failed to create topic')
       }
 
       const result = await response.json()
-      setSearchMessage(
-        `Search completed! Found ${result.articles?.length || 0} articles. Categorizing...`
-      )
 
-      // Wait a bit to show the message
-      await new Promise((resolve) => setTimeout(resolve, 1500))
+      setNewTopic({ title: '', description: '', keywords: '' })
+      setIsCreateModalOpen(false)
+      setLoading(false)
 
-      setIsExecutingSearch(false)
+      // Show success message
+      setSearchMessage('Topic created! Search will start in the background.')
+      await new Promise((resolve) => setTimeout(resolve, 2000))
       setSearchMessage('')
+
+      // Refresh topics list
       fetchTopics()
     } catch (error) {
       console.error('Error creating topic:', error)
-      setIsExecutingSearch(false)
-      setSearchMessage('')
       setLoading(false)
     }
   }
@@ -330,6 +311,33 @@ export default function TopicsPage() {
                 )}
               </CardHeader>
               <CardContent className="pt-0 flex-1">
+                {/* Search Status Badge */}
+                <div className="mb-3">
+                  {topic.search_status === 'pending' && (
+                    <Badge variant="outline" className="text-xs text-yellow-600 border-yellow-600">
+                      ⏳ Search pending
+                    </Badge>
+                  )}
+                  {topic.search_status === 'searching' && (
+                    <Badge variant="outline" className="text-xs text-blue-600 border-blue-600">
+                      <div className="animate-spin rounded-full h-3 w-3 border-b border-blue-600 mr-1"></div>
+                      Searching...
+                    </Badge>
+                  )}
+                  {topic.search_status === 'completed' &&
+                    topic.feed_items?.[0] &&
+                    topic.feed_items[0].count > 0 && (
+                      <Badge variant="outline" className="text-xs text-green-600 border-green-600">
+                        ✓ Up to date
+                      </Badge>
+                    )}
+                  {topic.search_status === 'failed' && (
+                    <Badge variant="outline" className="text-xs text-red-600 border-red-600">
+                      ✗ Search failed
+                    </Badge>
+                  )}
+                </div>
+
                 {topic.keywords && topic.keywords.length > 0 && (
                   <div className="flex flex-wrap gap-1 mb-3">
                     {topic.keywords.map((keyword, index) => (
