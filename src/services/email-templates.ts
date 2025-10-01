@@ -1,0 +1,257 @@
+interface DailySummary {
+  topic: {
+    id: string
+    title: string
+  }
+  date: string
+  summary: string
+  item_count: number
+  items: Array<{
+    id: string
+    title: string
+    url: string
+    source: string
+    summary: string
+    published_at: string
+  }>
+}
+
+export function generateDailyBriefEmail(
+  summaries: DailySummary[],
+  appUrl: string = process.env.NEXT_PUBLIC_APP_URL || 'https://rikuz.vercel.app'
+): { subject: string; html: string } {
+  const today = new Date().toLocaleDateString('en-US', {
+    weekday: 'long',
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+  })
+
+  const totalItems = summaries.reduce((sum, s) => sum + s.item_count, 0)
+
+  const subject = `Your daily brief from Rikuz - ${new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`
+
+  const html = `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Your Daily Brief</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      line-height: 1.6;
+      color: #333;
+      max-width: 600px;
+      margin: 0 auto;
+      padding: 20px;
+      background-color: #f5f5f5;
+    }
+    .container {
+      background-color: #ffffff;
+      border-radius: 8px;
+      padding: 32px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .header {
+      text-align: center;
+      padding-bottom: 24px;
+      border-bottom: 2px solid #f0f0f0;
+    }
+    .logo {
+      font-size: 28px;
+      font-weight: bold;
+      color: #2563eb;
+      margin-bottom: 8px;
+    }
+    .date {
+      color: #666;
+      font-size: 14px;
+    }
+    .summary-section {
+      margin-top: 32px;
+      padding: 20px;
+      background-color: #f9fafb;
+      border-radius: 6px;
+      border-left: 4px solid #2563eb;
+    }
+    .topic-title {
+      font-size: 20px;
+      font-weight: 600;
+      color: #1f2937;
+      margin-bottom: 12px;
+    }
+    .topic-summary {
+      color: #4b5563;
+      margin-bottom: 16px;
+      font-size: 15px;
+    }
+    .item {
+      background-color: #ffffff;
+      padding: 16px;
+      margin: 12px 0;
+      border-radius: 6px;
+      border: 1px solid #e5e7eb;
+    }
+    .item-title {
+      font-size: 16px;
+      font-weight: 600;
+      color: #1f2937;
+      margin-bottom: 8px;
+    }
+    .item-title a {
+      color: #2563eb;
+      text-decoration: none;
+    }
+    .item-title a:hover {
+      text-decoration: underline;
+    }
+    .item-summary {
+      color: #6b7280;
+      font-size: 14px;
+      margin-bottom: 8px;
+    }
+    .item-meta {
+      font-size: 12px;
+      color: #9ca3af;
+    }
+    .badge {
+      display: inline-block;
+      padding: 2px 8px;
+      background-color: #e0e7ff;
+      color: #3730a3;
+      border-radius: 4px;
+      font-size: 12px;
+      font-weight: 500;
+    }
+    .cta {
+      text-align: center;
+      margin-top: 32px;
+      padding-top: 24px;
+      border-top: 2px solid #f0f0f0;
+    }
+    .button {
+      display: inline-block;
+      padding: 12px 32px;
+      background-color: #2563eb;
+      color: #ffffff;
+      text-decoration: none;
+      border-radius: 6px;
+      font-weight: 600;
+      font-size: 16px;
+    }
+    .button:hover {
+      background-color: #1d4ed8;
+    }
+    .footer {
+      text-align: center;
+      margin-top: 32px;
+      padding-top: 20px;
+      border-top: 1px solid #e5e7eb;
+      color: #9ca3af;
+      font-size: 12px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <div class="logo">Rikuz</div>
+      <div class="date">${today}</div>
+      <p style="margin-top: 16px; color: #6b7280;">
+        ${totalItems} ${totalItems === 1 ? 'item' : 'items'} found across ${summaries.length} ${summaries.length === 1 ? 'topic' : 'topics'}
+      </p>
+    </div>
+
+    ${summaries
+      .map(
+        (summary) => `
+      <div class="summary-section">
+        <div class="topic-title">${summary.topic.title}</div>
+        <div class="topic-summary">${summary.summary}</div>
+
+        ${summary.items
+          .map(
+            (item) => `
+          <div class="item">
+            <div class="item-title">
+              <a href="${item.url}" target="_blank">${item.title}</a>
+            </div>
+            <div class="item-summary">${item.summary}</div>
+            <div class="item-meta">
+              <span class="badge">${item.source}</span>
+              <span style="margin-left: 8px;">
+                ${new Date(item.published_at).toLocaleDateString('en-US', {
+                  month: 'short',
+                  day: 'numeric',
+                })}
+              </span>
+            </div>
+          </div>
+        `
+          )
+          .join('')}
+      </div>
+    `
+      )
+      .join('')}
+
+    <div class="cta">
+      <a href="${appUrl}/feed" class="button">View Full Feed</a>
+    </div>
+
+    <div class="footer">
+      <p>This brief was generated by your personal AI agents.</p>
+      <p>
+        <a href="${appUrl}/settings/notifications" style="color: #2563eb; text-decoration: none;">
+          Update notification preferences
+        </a>
+      </p>
+    </div>
+  </div>
+</body>
+</html>
+`
+
+  return { subject, html }
+}
+
+export function generateDiscordEmbed(summaries: DailySummary[]) {
+  const totalItems = summaries.reduce((sum, s) => sum + s.item_count, 0)
+
+  return {
+    embeds: [
+      {
+        title: `📰 Your Daily Brief - ${new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`,
+        description: `${totalItems} items found across ${summaries.length} topics`,
+        color: 0x2563eb, // Blue color
+        fields: summaries.flatMap((summary) => [
+          {
+            name: `📌 ${summary.topic.title}`,
+            value: summary.summary,
+            inline: false,
+          },
+          ...summary.items.slice(0, 3).map((item) => ({
+            name: item.title,
+            value: `${item.summary.slice(0, 100)}...\n[Read more](${item.url})`,
+            inline: false,
+          })),
+          ...(summary.items.length > 3
+            ? [
+                {
+                  name: '+ More items',
+                  value: `${summary.items.length - 3} more items available in your feed`,
+                  inline: false,
+                },
+              ]
+            : []),
+        ]),
+        timestamp: new Date().toISOString(),
+        footer: {
+          text: 'Rikuz - Your AI-powered research assistant',
+        },
+      },
+    ],
+  }
+}

@@ -23,6 +23,7 @@
     "@radix-ui/react-slot": "latest",
     "@supabase/ssr": "^0.7.0",
     "@supabase/supabase-js": "latest",
+    "@upstash/workflow": "^0.2.20",
     "ai": "latest",
     "class-variance-authority": "latest",
     "clsx": "latest",
@@ -31,6 +32,7 @@
     "pino": "latest",
     "react": "latest",
     "react-dom": "latest",
+    "resend": "^6.1.2",
     "tailwind-merge": "latest",
     "zod": "latest"
   },
