@@ -66,7 +66,7 @@ export class BriefGenerationService {
         topic_id: topicId,
         date,
         summary,
-        item_count: items.length,
+        items_count: items.length,
         created_at: new Date().toISOString(),
       },
       {
