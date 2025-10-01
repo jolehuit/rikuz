@@ -5,8 +5,8 @@ import { revalidatePath } from 'next/cache'
 
 interface NotificationSettings {
   user_id: string
-  email_enabled: boolean
-  discord_enabled: boolean
+  email_enabled: boolean | null
+  discord_enabled: boolean | null
   discord_webhook_url: string | null
   send_time: string
   timezone: string
