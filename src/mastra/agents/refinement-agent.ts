@@ -1,6 +1,7 @@
 import { Agent } from '@mastra/core/agent'
 import { gemini } from '../index'
 import { FeedbackAggregationResult } from '@/services/feedbackAggregation'
+import { z } from 'zod'
 
 /**
  * Refinement Agent - Analyzes feedback and updates Master Prompts
@@ -79,23 +80,15 @@ ${feedback.preferred_sources.map((s) => `- ${s.source}: ${s.count} likes`).join(
 ${feedback.user_comments.map((c) => `- "${c.comment}" (on: ${c.feed_item_title})`).join('\n')}
 `
 
-  const response = await refinementAgent.generate(feedbackContext, {
-    output: {
-      schema: {
-        type: 'object',
-        properties: {
-          updated_master_prompt: { type: 'string' },
-          changes_summary: { type: 'string' },
-          confidence_score: { type: 'number', minimum: 0, maximum: 1 },
-        },
-        required: ['updated_master_prompt', 'changes_summary', 'confidence_score'],
-      },
-    },
+  const outputSchema = z.object({
+    updated_master_prompt: z.string(),
+    changes_summary: z.string(),
+    confidence_score: z.number().min(0).max(1),
   })
 
-  return response.object as {
-    updated_master_prompt: string
-    changes_summary: string
-    confidence_score: number
-  }
+  const response = await refinementAgent.generate(feedbackContext, {
+    output: outputSchema,
+  })
+
+  return response.object as z.infer<typeof outputSchema>
 }
