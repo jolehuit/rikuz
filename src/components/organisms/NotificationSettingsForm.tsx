@@ -18,8 +18,8 @@ import { useRouter } from 'next/navigation'
 
 interface NotificationSettings {
   user_id: string
-  email_enabled: boolean
-  discord_enabled: boolean
+  email_enabled: boolean | null
+  discord_enabled: boolean | null
   discord_webhook_url: string | null
   send_time: string
   timezone: string
@@ -77,7 +77,7 @@ export function NotificationSettingsForm({
           <div className="flex items-center space-x-2">
             <Checkbox
               id="email-enabled"
-              checked={settings.email_enabled}
+              checked={settings.email_enabled ?? true}
               onCheckedChange={(checked) =>
                 setSettings({ ...settings, email_enabled: checked as boolean })
               }
@@ -98,7 +98,7 @@ export function NotificationSettingsForm({
           <div className="flex items-center space-x-2">
             <Checkbox
               id="discord-enabled"
-              checked={settings.discord_enabled}
+              checked={settings.discord_enabled ?? false}
               onCheckedChange={(checked) =>
                 setSettings({ ...settings, discord_enabled: checked as boolean })
               }
